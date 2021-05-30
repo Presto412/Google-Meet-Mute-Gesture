@@ -1,0 +1,12 @@
+node_modules
+dist/src*
+.cache
+yarn-error.log
+*.tgz
+*-ubyte
+*.pyc
+.yalc
+.DS_STORE
+yalc.lock
+*firebase-debug.log
+**/.parcel-cache
