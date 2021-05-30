@@ -13,7 +13,7 @@ yarn build
 
 To install the unpacked extension in chrome, follow the [instructions here](https://developer.chrome.com/extensions/getstarted).  Briefly, navigate to `chrome://extensions`, make sure that the `Developer mode` switch is turned on in the upper right, and click `Load Unpacked`.  Then select the appropriate directory (the `dist` directory containing `manifest.json`);
 
-Also, if you'd like to use your own training model from google [teachable machine](https://teachablemachine.withgoogle.com/), do replace the URL in `src/constants.js` and make sure to have the gesture classes match the values(MUTE_MIC and MUTE_VIDEO constants in `src/constants.js`).
+Also, if you'd like to use your own training model from google [teachable machine](https://teachablemachine.withgoogle.com/) (the model has training images of only my face at this point), do replace the URL in `src/constants.js` and make sure to have the gesture classes match the values(MUTE_MIC and MUTE_VIDEO constants in `src/constants.js`).
 
 
 Using the extension
