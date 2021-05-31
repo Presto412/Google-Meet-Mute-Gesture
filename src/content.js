@@ -1,4 +1,10 @@
-import { MUTE_MIC, MUTE_VIDEO, PAGE_LOADED, PAGE_UNLOADED } from "./constants";
+import {
+  MUTE_MIC,
+  MUTE_VIDEO,
+  PAGE_LOADED,
+  PAGE_UNLOADED,
+  THRESHOLD,
+} from "./constants";
 
 function handlePrediction(predictions) {
   let maxProb = -1;
@@ -9,13 +15,18 @@ function handlePrediction(predictions) {
       className = prediction.className;
     }
   }
-  console.log(`prediction:${className}`);
-  if (className === MUTE_MIC) {
-    muteIfElgible("Turn off microphone");
-  } else if (className === MUTE_VIDEO) {
-    muteIfElgible("Turn off camera");
+  console.debug(`prediction:${className}, maxProb:${maxProb}`);
+  if (maxProb >= THRESHOLD) {
+    switch (className) {
+      case MUTE_MIC:
+        muteIfElgible("Turn off microphone");
+        break;
+      case MUTE_VIDEO:
+        muteIfElgible("Turn off camera");
+      default:
+        break;
+    }
   }
-  return true;
 }
 
 function muteIfElgible(searchString) {

@@ -19,14 +19,14 @@ let doLoop = false;
 
 chrome.storage.local.get(CAM_ACCESS, async (items) => {
   if (!!items[CAM_ACCESS]) {
-    console.log("cam access already exists");
+    console.debug("cam access already exists");
     await loadModel();
   }
 });
 
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
   if (CAM_ACCESS in changes) {
-    console.log("cam access granted");
+    console.debug("cam access granted");
     await loadModel();
   }
 });
@@ -63,7 +63,7 @@ async function setupCam() {
       video.srcObject = mediaStream;
       canvas.width = CANVAS_WIDTH;
       canvas.height = CANVAS_HEIGHT;
-      console.log("src assigned");
+      console.debug("src assigned");
     })
     .catch((error) => {
       console.warn(error);
@@ -97,13 +97,13 @@ async function destroyCam() {
 }
 
 async function loadModel() {
-  console.log("Loading model...");
+  console.debug("Loading model...");
   const modelURL = TMMODEL_URL + MODEL_EXT;
   const metadataURL = TMMODEL_URL + METADATA_EXT;
   try {
     model = await load(modelURL, metadataURL);
     let maxPredictions = model.getTotalClasses();
-    console.log(`Max predictions:${maxPredictions}`);
+    console.debug(`Max predictions:${maxPredictions}`);
   } catch (err) {
     console.error(
       `Unable to load model from URL: ${TMMODEL_URL}. Error: ${JSON.stringify(
@@ -114,7 +114,7 @@ async function loadModel() {
 }
 
 async function predict() {
-  console.log("Predicting...");
+  console.debug("Predicting...");
   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
   const prediction = await model.predict(canvas);
   return prediction;

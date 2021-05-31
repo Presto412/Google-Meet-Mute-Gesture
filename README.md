@@ -13,12 +13,12 @@ yarn build
 
 To install the unpacked extension in chrome, follow the [instructions here](https://developer.chrome.com/extensions/getstarted).  Briefly, navigate to `chrome://extensions`, make sure that the `Developer mode` switch is turned on in the upper right, and click `Load Unpacked`.  Then select the appropriate directory (the `dist` directory containing `manifest.json`);
 
-Also, if you'd like to use your own training model from google [teachable machine](https://teachablemachine.withgoogle.com/) (the model has training images of only my face at this point), do replace the URL in `src/constants.js` and make sure to have the gesture classes match the values(MUTE_MIC and MUTE_VIDEO constants in `src/constants.js`).
+Also, if you'd like to use your own training model from google [teachable machine](https://teachablemachine.withgoogle.com/) (the model has training images of only my face at this point), do replace the URL in `src/constants.js` and make sure to have the gesture classes match the values(MUTE_MIC and MUTE_VIDEO constants in `src/constants.js`). You can also control the `THRESHOLD` (ie Accuracy of prediction at which the mute mic/mute video will be applied, also present in `src/constants.js`).
 
 
 Using the extension
 ----
-Once the extension is installed, a popup will appear to grant access to the camera. After which you can use the extension however you like.
+Once the extension is installed, a popup will appear to grant access to the camera. After which you can use the extension however you like. Enable Debug logging in the console if you would like to view the debug logs.
 
 
 TODO
