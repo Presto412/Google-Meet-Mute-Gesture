@@ -19,17 +19,17 @@ function handlePrediction(predictions) {
   if (maxProb >= THRESHOLD) {
     switch (className) {
       case MUTE_MIC:
-        muteIfElgible("Turn off microphone");
+        muteIfEligible("Turn off microphone");
         break;
       case MUTE_VIDEO:
-        muteIfElgible("Turn off camera");
+        muteIfEligible("Turn off camera");
       default:
         break;
     }
   }
 }
 
-function muteIfElgible(searchString) {
+function muteIfEligible(searchString) {
   let elem = [...document.querySelectorAll("[data-tooltip]")].filter((item) =>
     item.getAttribute("aria-label").toString().includes(searchString)
   )[0];
