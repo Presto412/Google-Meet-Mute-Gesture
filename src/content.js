@@ -11,21 +11,20 @@ function handlePrediction(predictions) {
   }
   console.log(`prediction:${className}`);
   if (className === MUTE_MIC) {
-    let elem = [...document.querySelectorAll("[data-tooltip]")].filter((item) =>
-      item.getAttribute("aria-label").toString().includes("microphone")
-    )[0];
-    if (elem && elem.getAttribute("aria-label").includes("off")) {
-      elem.click();
-    }
+    muteIfElgible("Turn off microphone");
   } else if (className === MUTE_VIDEO) {
-    let elem = [...document.querySelectorAll("[data-tooltip]")].filter((item) =>
-      item.getAttribute("aria-label").toString().includes("camera")
-    )[0];
-    if (elem && elem.getAttribute("aria-label").includes("off")) {
-      elem.click();
-    }
+    muteIfElgible("Turn off camera");
   }
   return true;
+}
+
+function muteIfElgible(searchString) {
+  let elem = [...document.querySelectorAll("[data-tooltip]")].filter((item) =>
+    item.getAttribute("aria-label").toString().includes(searchString)
+  )[0];
+  if (elem) {
+    elem.click();
+  }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
