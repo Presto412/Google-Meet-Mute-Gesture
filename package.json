@@ -1,9 +1,9 @@
 {
-  "name": "tfjs-basic-chrome-extension",
+  "name": "google-meet-gesture-mute",
   "version": "0.1.0",
-  "description": "Use tfjs model.predict in a chrome extension",
+  "description": "Use gesture recognition to mute audio/video on google meet",
   "scripts": {
-    "copy": "cp src/welcome/* dist/src",
+    "copy": "mkdir -p dist/src && cp src/welcome/* dist/src",
     "build": "npm run copy && parcel build src/* -d dist/src/ -o background",
     "watch": "npm run copy && parcel watch src/* --hmr-hostname localhost -d dist/src/ -o background"
   },
