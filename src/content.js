@@ -30,9 +30,10 @@ function handlePrediction(predictions) {
 }
 
 function muteIfEligible(searchString) {
-  let elem = [...document.querySelectorAll("[data-tooltip]")].filter((item) =>
-    item.getAttribute("aria-label").toString().includes(searchString)
+  let elem = [...document.querySelectorAll("[aria-label]")].filter((item) =>
+    item.getAttribute("aria-label").includes(searchString)
   )[0];
+
   if (elem) {
     elem.click();
   }
