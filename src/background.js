@@ -10,12 +10,20 @@ import {
   PREDICTION,
   MODEL_EXT,
   METADATA_EXT,
+  THRESHOLD,
+  MEET_URL,
 } from "./constants";
 
 let model;
 let video = document.createElement("video");
 let canvas = document.createElement("canvas");
 let doLoop = false;
+
+chrome.extension.onConnect.addListener(function (port) {
+  port.onMessage.addListener(function (msg) {
+    sendMessageToActiveMeetTab({ action: THRESHOLD, value: msg });
+  });
+});
 
 chrome.storage.local.get(CAM_ACCESS, async (items) => {
   if (!!items[CAM_ACCESS]) {
@@ -24,7 +32,7 @@ chrome.storage.local.get(CAM_ACCESS, async (items) => {
   }
 });
 
-chrome.storage.onChanged.addListener(async (changes, namespace) => {
+chrome.storage.onChanged.addListener(async (changes, _namespace) => {
   if (CAM_ACCESS in changes) {
     console.debug("cam access granted");
     await loadModel();
@@ -42,7 +50,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   if (message && message.message === PAGE_LOADED) {
     doLoop = true;
     setupCam();
@@ -75,16 +83,7 @@ async function setupCam() {
 
 async function loop() {
   const prediction = await predict(video);
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    if (tabs.length < 1) {
-      return;
-    }
-    chrome.tabs.sendMessage(
-      tabs[0].id,
-      { action: PREDICTION, prediction },
-      function (response) {}
-    );
-  });
+  sendMessageToActiveMeetTab({ action: PREDICTION, prediction });
   if (doLoop) {
     setTimeout(async () => await loop(), 250);
   }
@@ -119,3 +118,11 @@ async function predict() {
   const prediction = await model.predict(canvas);
   return prediction;
 }
+
+const sendMessageToActiveMeetTab = (message) => {
+  chrome.tabs.query({ active: true }, function (tabs) {
+    let meetTabs = tabs.filter((tab) => tab.url.includes(MEET_URL));
+    meetTabs[0] &&
+      chrome.tabs.sendMessage(meetTabs[0].id, message, function (_response) {});
+  });
+};

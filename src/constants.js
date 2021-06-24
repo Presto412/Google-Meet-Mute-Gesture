@@ -11,4 +11,5 @@ export const CANVAS_WIDTH = "640";
 export const CANVAS_HEIGHT = "480";
 export const MUTE_MIC = "Mute Mic";
 export const MUTE_VIDEO = "Mute video";
-export const THRESHOLD = 0.98;
+export const THRESHOLD = "threshold";
+export const MEET_URL = "meet.google.com";

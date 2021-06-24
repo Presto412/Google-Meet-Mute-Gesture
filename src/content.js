@@ -3,8 +3,11 @@ import {
   MUTE_VIDEO,
   PAGE_LOADED,
   PAGE_UNLOADED,
+  PREDICTION,
   THRESHOLD,
 } from "./constants";
+
+window.threshold = 0.98;
 
 function handlePrediction(predictions) {
   let maxProb = -1;
@@ -16,7 +19,8 @@ function handlePrediction(predictions) {
     }
   }
   console.debug(`prediction:${className}, maxProb:${maxProb}`);
-  if (maxProb >= THRESHOLD) {
+  console.log(`threshold:${window.threshold}`);
+  if (maxProb >= window.threshold) {
     switch (className) {
       case MUTE_MIC:
         muteIfEligible("Turn off microphone");
@@ -40,8 +44,15 @@ function muteIfEligible(searchString) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message && message.prediction) {
-    handlePrediction(message.prediction);
+  switch (message.action) {
+    case PREDICTION:
+      handlePrediction(message.prediction);
+      break;
+    case THRESHOLD:
+      window.threshold = message.value;
+      break;
+    default:
+      break;
   }
 });
 

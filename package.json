@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Use gesture recognition to mute audio/video on google meet",
   "scripts": {
-    "copy": "mkdir -p dist/src && cp src/welcome/* dist/src",
+    "copy": "mkdir -p dist/src && cp src/welcome/* dist/src && cp src/popup/* dist/src",
     "build": "npm run copy && parcel build src/* -d dist/src/ -o background",
     "watch": "npm run copy && parcel watch src/* --hmr-hostname localhost -d dist/src/ -o background"
   },
