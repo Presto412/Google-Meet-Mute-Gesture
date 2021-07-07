@@ -9,15 +9,36 @@
     <script src="popup.js"></script>
   </head>
   <body>
-    <h2>Set the accuracy threshold</h2>
+    <h1>Google Meet Gesture Mute</h1>
+    <h2>Feature Toggles</h2>
     <input
-      type="range"
-      min="0.950"
-      max="1.000"
-      step="0.001"
-      value="0.980"
-      id="threshold"
+      type="checkbox"
+      id="muteMic"
+      name="muteMic"
+      value="muteMic"
+      checked
     />
-    <div id="result">0.980</div>
+    <label for="muteMic"> Mic Muting</label><br />
+    <input
+      type="checkbox"
+      id="muteVideo"
+      name="muteVideo"
+      value="muteVideo"
+      checked
+    />
+    <label for="muteVideo">Video Muting</label><br />
+    <input
+      type="checkbox"
+      id="raiseHand"
+      name="raiseHand"
+      value="raiseHand"
+      checked
+    />
+    <label for="raiseHand">Raise Hand Gesture</label><br />
+    <h2>Accuracy threshold</h2>
+    <input type="range" min="0.950" max="1.000" step="0.001" id="threshold" />
+    <div id="result"></div>
+    <hr />
+    <p>Made by <a href="https://www.github.com/Presto412">Priyansh Jain</a></p>
   </body>
 </html>

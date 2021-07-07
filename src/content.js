@@ -8,9 +8,14 @@ import {
   MUTED,
   RAISE_HAND,
   NOTIFICATION,
+  FEATURE_TOGGLES,
+  ENABLED,
 } from "./constants";
 
 window.threshold = 0.98;
+window.muteMicEnabled = false;
+window.window.muteVideoEnabled = false;
+window.wraiseHandEnabled = false;
 
 function handlePrediction(predictions) {
   let maxProb = -1;
@@ -26,16 +31,22 @@ function handlePrediction(predictions) {
   if (maxProb >= window.threshold) {
     switch (className) {
       case MUTE_MIC:
-        findElementByAriaLabelAndClick(
-          "Turn off microphone",
-          "Muted Microphone"
-        );
+        if (muteMicEnabled) {
+          findElementByAriaLabelAndClick(
+            "Turn off microphone",
+            "Muted Microphone"
+          );
+        }
         break;
       case MUTE_VIDEO:
-        findElementByAriaLabelAndClick("Turn off camera", "Muted Video");
+        if (window.muteVideoEnabled) {
+          findElementByAriaLabelAndClick("Turn off camera", "Muted Video");
+        }
         break;
       case RAISE_HAND:
-        findElementByAriaLabelAndClick("Raise hand", "Raised Hand");
+        if (wraiseHandEnabled) {
+          findElementByAriaLabelAndClick("Raise hand", "Raised Hand");
+        }
       default:
         break;
     }
@@ -47,7 +58,6 @@ function findElementByAriaLabelAndClick(searchString, msg) {
     item.getAttribute("aria-label").includes(searchString)
   )[0];
 
-  
   if (elem) {
     elem.click();
     msg && chrome.runtime.sendMessage({ type: NOTIFICATION, message: msg });
@@ -62,6 +72,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case THRESHOLD:
       window.threshold = message.value;
       break;
+    case FEATURE_TOGGLES:
+      if (message[MUTE_MIC]) {
+        if (message[MUTE_MIC] === ENABLED) {
+          window.muteMicEnabled = true;
+        } else {
+          window.muteMicEnabled = false;
+        }
+      }
+      if (message[MUTE_VIDEO]) {
+        if (message[MUTE_VIDEO] === ENABLED) {
+          window.muteVideoEnabled = true;
+        } else {
+          window.muteVideoEnabled = false;
+        }
+      }
+      if (message[RAISE_HAND]) {
+        if (message[RAISE_HAND] === ENABLED) {
+          window.raiseHandEnabled = true;
+        } else {
+          window.raiseHandEnabled = false;
+        }
+      }
+      if (message[THRESHOLD]) {
+        window.threshold = message[THRESHOLD];
+      }
     default:
       break;
   }

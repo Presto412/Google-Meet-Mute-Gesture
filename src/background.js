@@ -13,6 +13,11 @@ import {
   THRESHOLD,
   MEET_URL,
   NOTIFICATION,
+  POPUP_LOADED,
+  FEATURE_TOGGLES,
+  RAISE_HAND,
+  MUTE_VIDEO,
+  MUTE_MIC,
 } from "./constants";
 
 let model;
@@ -21,9 +26,26 @@ let canvas = document.createElement("canvas");
 let doLoop = false;
 
 chrome.extension.onConnect.addListener(function (port) {
+  sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
   port.onMessage.addListener(function (msg) {
-    sendMessageToActiveMeetTab({ action: THRESHOLD, value: msg });
-    chrome.storage.local.set({ THRESHOLD: msg });
+    switch (msg.type) {
+      case POPUP_LOADED:
+        sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
+        sendLocalStorageInfoForKeyToPopup(port, MUTE_MIC);
+        sendLocalStorageInfoForKeyToPopup(port, MUTE_VIDEO);
+        sendLocalStorageInfoForKeyToPopup(port, RAISE_HAND);
+        break;
+      case FEATURE_TOGGLES:
+        let copy = msg;
+        delete copy.type;
+        sendMessageToActiveMeetTab({
+          action: FEATURE_TOGGLES,
+          ...copy,
+        });
+        chrome.storage.local.set({ ...copy });
+      default:
+        break;
+    }
   });
 });
 
@@ -56,6 +78,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message && message.message === PAGE_LOADED) {
     doLoop = true;
     setupCam();
+    sendLocalStorageInfoForKeyToContentScript(THRESHOLD);
+    sendLocalStorageInfoForKeyToContentScript(MUTE_MIC);
+    sendLocalStorageInfoForKeyToContentScript(MUTE_VIDEO);
+    sendLocalStorageInfoForKeyToContentScript(RAISE_HAND);
   } else if (message && message.type && message.type === NOTIFICATION) {
     showNotification(message);
   } else {
@@ -63,6 +89,25 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     destroyCam();
   }
 });
+
+function sendLocalStorageInfoForKeyToPopup(port, key) {
+  chrome.storage.local.get(key, (result) => {
+    if (result) {
+      port.postMessage({ [key]: result[key] });
+    }
+  });
+}
+
+function sendLocalStorageInfoForKeyToContentScript(key) {
+  chrome.storage.local.get(key, (result) => {
+    if (result) {
+      sendMessageToActiveMeetTab({
+        action: FEATURE_TOGGLES,
+        [key]: result[key],
+      });
+    }
+  });
+}
 
 function showNotification(message) {
   chrome.notifications.create(
