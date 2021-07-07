@@ -2,7 +2,7 @@
 
 This project is a chrome extension that allows you to mute the audio/video on Google Meet based on a gesture.
 
-![demo](static/handgesture-screenrecord.gif)
+![demo](handgesture-screenrecord.gif)
 
 ## Building the project
 

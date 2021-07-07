@@ -12,6 +12,7 @@ import {
   METADATA_EXT,
   THRESHOLD,
   MEET_URL,
+  NOTIFICATION,
 } from "./constants";
 
 let model;
@@ -22,6 +23,7 @@ let doLoop = false;
 chrome.extension.onConnect.addListener(function (port) {
   port.onMessage.addListener(function (msg) {
     sendMessageToActiveMeetTab({ action: THRESHOLD, value: msg });
+    chrome.storage.local.set({ THRESHOLD: msg });
   });
 });
 
@@ -50,15 +52,31 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message && message.message === PAGE_LOADED) {
     doLoop = true;
     setupCam();
+  } else if (message && message.type && message.type === NOTIFICATION) {
+    showNotification(message);
   } else {
     doLoop = false;
     destroyCam();
   }
 });
+
+function showNotification(message) {
+  chrome.notifications.create(
+    "",
+    {
+      type: "basic",
+      title: "Google Meet Gesture Mute",
+      message: message.message,
+      iconUrl: "/mute.png",
+      eventTime: 500,
+    },
+    () => {}
+  );
+}
 
 async function setupCam() {
   navigator.mediaDevices
@@ -120,9 +138,11 @@ async function predict() {
 }
 
 const sendMessageToActiveMeetTab = (message) => {
-  chrome.tabs.query({ active: true }, function (tabs) {
+  chrome.tabs.query({}, function (tabs) {
+    if (!tabs) {
+      return;
+    }
     let meetTabs = tabs.filter((tab) => tab.url.includes(MEET_URL));
-    meetTabs[0] &&
-      chrome.tabs.sendMessage(meetTabs[0].id, message, function (_response) {});
+    meetTabs[0] && chrome.tabs.sendMessage(meetTabs[0].id, message);
   });
 };

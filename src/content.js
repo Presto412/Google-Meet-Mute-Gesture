@@ -5,6 +5,9 @@ import {
   PAGE_UNLOADED,
   PREDICTION,
   THRESHOLD,
+  MUTED,
+  RAISE_HAND,
+  NOTIFICATION,
 } from "./constants";
 
 window.threshold = 0.98;
@@ -23,23 +26,31 @@ function handlePrediction(predictions) {
   if (maxProb >= window.threshold) {
     switch (className) {
       case MUTE_MIC:
-        muteIfEligible("Turn off microphone");
+        findElementByAriaLabelAndClick(
+          "Turn off microphone",
+          "Muted Microphone"
+        );
         break;
       case MUTE_VIDEO:
-        muteIfEligible("Turn off camera");
+        findElementByAriaLabelAndClick("Turn off camera", "Muted Video");
+        break;
+      case RAISE_HAND:
+        findElementByAriaLabelAndClick("Raise hand", "Raised Hand");
       default:
         break;
     }
   }
 }
 
-function muteIfEligible(searchString) {
+function findElementByAriaLabelAndClick(searchString, msg) {
   let elem = [...document.querySelectorAll("[aria-label]")].filter((item) =>
     item.getAttribute("aria-label").includes(searchString)
   )[0];
 
+  
   if (elem) {
     elem.click();
+    msg && chrome.runtime.sendMessage({ type: NOTIFICATION, message: msg });
   }
 }
 
@@ -57,11 +68,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 window.onload = (e) => {
-  chrome.runtime.sendMessage({ message: PAGE_LOADED }, function (response) {});
+  chrome.runtime.sendMessage({ message: PAGE_LOADED });
 };
 window.onunload = (e) => {
-  chrome.runtime.sendMessage(
-    { message: PAGE_UNLOADED },
-    function (response) {}
-  );
+  chrome.runtime.sendMessage({ message: PAGE_UNLOADED });
 };
