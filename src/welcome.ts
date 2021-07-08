@@ -1,13 +1,15 @@
+import { CAM_ACCESS } from "./constants";
+
 navigator.mediaDevices
   .getUserMedia({
     video: true,
   })
-  .then((stream) => {
+  .then((_stream) => {
     document.querySelector("#status").innerHTML =
       "Webcam access granted for extension, please close this tab";
     chrome.storage.local.set(
       {
-        camAccess: true,
+        [CAM_ACCESS]: true,
       },
       () => {}
     );

@@ -1,7 +1,7 @@
 import "babel-polyfill";
-import { load } from "@teachablemachine/image";
+import { CustomMobileNet, load } from "@teachablemachine/image";
 import {
-  TMMODEL_URL,
+  DEFAULT_TMMODEL_URL,
   CAM_ACCESS,
   CANVAS_WIDTH,
   PAGE_LOADED,
@@ -18,16 +18,17 @@ import {
   RAISE_HAND,
   MUTE_VIDEO,
   MUTE_MIC,
+  MODEL_URL,
 } from "./constants";
 
-let model;
+let model: CustomMobileNet, videoStream: MediaStream;
 let video = document.createElement("video");
 let canvas = document.createElement("canvas");
 let doLoop = false;
 
-chrome.extension.onConnect.addListener(function (port) {
+chrome.runtime.onConnect.addListener(function (port) {
   sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
-  port.onMessage.addListener(function (msg) {
+  port.onMessage.addListener(async function (msg) {
     switch (msg.type) {
       case POPUP_LOADED:
         sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
@@ -43,23 +44,32 @@ chrome.extension.onConnect.addListener(function (port) {
           ...copy,
         });
         chrome.storage.local.set({ ...copy });
+        break;
+      case MODEL_URL:
+        const {url} = msg;
+        await loadModel(url);
+        chrome.storage.local.set({[MODEL_URL]: url});
       default:
         break;
     }
   });
 });
 
-chrome.storage.local.get(CAM_ACCESS, async (items) => {
-  if (!!items[CAM_ACCESS]) {
+chrome.storage.local.get([CAM_ACCESS, MODEL_URL], async (items) => {
+  if (items[CAM_ACCESS]) {
     console.debug("cam access already exists");
-    await loadModel();
+    if(items[MODEL_URL]) {
+      await loadModel(items[MODEL_URL]);
+    } else {
+      await loadModel(DEFAULT_TMMODEL_URL);
+    }
   }
 });
 
 chrome.storage.onChanged.addListener(async (changes, _namespace) => {
   if (CAM_ACCESS in changes) {
     console.debug("cam access granted");
-    await loadModel();
+    await loadModel(DEFAULT_TMMODEL_URL);
   }
 });
 
@@ -90,7 +100,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
-function sendLocalStorageInfoForKeyToPopup(port, key) {
+function sendLocalStorageInfoForKeyToPopup(
+  port: chrome.runtime.Port,
+  key: string | any
+) {
   chrome.storage.local.get(key, (result) => {
     if (result) {
       port.postMessage({ [key]: result[key] });
@@ -98,7 +111,7 @@ function sendLocalStorageInfoForKeyToPopup(port, key) {
   });
 }
 
-function sendLocalStorageInfoForKeyToContentScript(key) {
+function sendLocalStorageInfoForKeyToContentScript(key: string | any) {
   chrome.storage.local.get(key, (result) => {
     if (result) {
       sendMessageToActiveMeetTab({
@@ -109,7 +122,7 @@ function sendLocalStorageInfoForKeyToContentScript(key) {
   });
 }
 
-function showNotification(message) {
+function showNotification(message: { message: any }) {
   chrome.notifications.create(
     "",
     {
@@ -132,6 +145,7 @@ async function setupCam() {
       video.setAttribute("playsinline", "");
       video.setAttribute("autoplay", "");
       video.srcObject = mediaStream;
+      videoStream = mediaStream;
       canvas.width = CANVAS_WIDTH;
       canvas.height = CANVAS_HEIGHT;
       console.debug("src assigned");
@@ -153,36 +167,40 @@ async function loop() {
 }
 
 async function destroyCam() {
-  video.srcObject.getTracks().forEach(function (track) {
+  videoStream.getTracks().forEach(function (track: { stop: () => void }) {
     track.stop();
   });
 }
 
-async function loadModel() {
+async function loadModel(url) {
   console.debug("Loading model...");
-  const modelURL = TMMODEL_URL + MODEL_EXT;
-  const metadataURL = TMMODEL_URL + METADATA_EXT;
+  const modelURL = url + MODEL_EXT;
+  const metadataURL = url + METADATA_EXT;
   try {
     model = await load(modelURL, metadataURL);
     let maxPredictions = model.getTotalClasses();
     console.debug(`Max predictions:${maxPredictions}`);
   } catch (err) {
     console.error(
-      `Unable to load model from URL: ${TMMODEL_URL}. Error: ${JSON.stringify(
+      `Unable to load model from URL: ${url}. Error: ${JSON.stringify(
         err
       )}`
     );
   }
 }
 
-async function predict() {
+async function predict(video: CanvasImageSource) {
   console.debug("Predicting...");
   canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
   const prediction = await model.predict(canvas);
   return prediction;
 }
 
-const sendMessageToActiveMeetTab = (message) => {
+const sendMessageToActiveMeetTab = (message: {
+  [x: number]: any;
+  action: string;
+  prediction?: any;
+}) => {
   chrome.tabs.query({}, function (tabs) {
     if (!tabs) {
       return;

@@ -8,12 +8,14 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/w3c-image-capture": "^1.0.4",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "clang-format": "^1.2.3",
-    "parcel-bundler": "^1.12.5"
+    "parcel-bundler": "^1.12.5",
+    "typescript": "^4.3.5"
   },
   "resolutions": {
     "is-svg": "4.3.1",
@@ -23,6 +25,7 @@
   "dependencies": {
     "@teachablemachine/image": "^0.8.4",
     "@tensorflow/tfjs": "^1.3.2",
+    "@types/chrome": "^0.0.146",
     "add": "^2.0.6",
     "parcel-plugin-static-files-copy": "^2.6.0"
   }

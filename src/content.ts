@@ -5,21 +5,20 @@ import {
   PAGE_UNLOADED,
   PREDICTION,
   THRESHOLD,
-  MUTED,
   RAISE_HAND,
   NOTIFICATION,
   FEATURE_TOGGLES,
   ENABLED,
 } from "./constants";
 
-window.threshold = 0.98;
-window.muteMicEnabled = false;
-window.window.muteVideoEnabled = false;
-window.wraiseHandEnabled = false;
+let threshold = 0.98;
+let muteMicEnabled = false;
+let muteVideoEnabled = false;
+let raiseHandEnabled = false;
 
-function handlePrediction(predictions) {
+function handlePrediction(predictions: any) {
   let maxProb = -1;
-  let className;
+  let className: any;
   for (const prediction of predictions) {
     if (prediction.probability >= maxProb) {
       maxProb = prediction.probability;
@@ -27,8 +26,8 @@ function handlePrediction(predictions) {
     }
   }
   console.debug(`prediction:${className}, maxProb:${maxProb}`);
-  console.log(`threshold:${window.threshold}`);
-  if (maxProb >= window.threshold) {
+  console.log(`threshold:${threshold}`);
+  if (maxProb >= threshold) {
     switch (className) {
       case MUTE_MIC:
         if (muteMicEnabled) {
@@ -39,12 +38,12 @@ function handlePrediction(predictions) {
         }
         break;
       case MUTE_VIDEO:
-        if (window.muteVideoEnabled) {
+        if (muteVideoEnabled) {
           findElementByAriaLabelAndClick("Turn off camera", "Muted Video");
         }
         break;
       case RAISE_HAND:
-        if (wraiseHandEnabled) {
+        if (raiseHandEnabled) {
           findElementByAriaLabelAndClick("Raise hand", "Raised Hand");
         }
       default:
@@ -53,10 +52,12 @@ function handlePrediction(predictions) {
   }
 }
 
-function findElementByAriaLabelAndClick(searchString, msg) {
-  let elem = [...document.querySelectorAll("[aria-label]")].filter((item) =>
+function findElementByAriaLabelAndClick(searchString: string, msg: string) {
+  let elem: HTMLElement = Array.from(
+    document.querySelectorAll("[aria-label]")
+  ).filter((item) =>
     item.getAttribute("aria-label").includes(searchString)
-  )[0];
+  )[0] as HTMLElement;
 
   if (elem) {
     elem.click();
@@ -70,41 +71,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handlePrediction(message.prediction);
       break;
     case THRESHOLD:
-      window.threshold = message.value;
+      threshold = message.value;
       break;
     case FEATURE_TOGGLES:
       if (message[MUTE_MIC]) {
         if (message[MUTE_MIC] === ENABLED) {
-          window.muteMicEnabled = true;
+          muteMicEnabled = true;
         } else {
-          window.muteMicEnabled = false;
+          muteMicEnabled = false;
         }
       }
       if (message[MUTE_VIDEO]) {
         if (message[MUTE_VIDEO] === ENABLED) {
-          window.muteVideoEnabled = true;
+          muteVideoEnabled = true;
         } else {
-          window.muteVideoEnabled = false;
+          muteVideoEnabled = false;
         }
       }
       if (message[RAISE_HAND]) {
         if (message[RAISE_HAND] === ENABLED) {
-          window.raiseHandEnabled = true;
+          raiseHandEnabled = true;
         } else {
-          window.raiseHandEnabled = false;
+          raiseHandEnabled = false;
         }
       }
       if (message[THRESHOLD]) {
-        window.threshold = message[THRESHOLD];
+        threshold = message[THRESHOLD];
       }
     default:
       break;
   }
 });
 
-window.onload = (e) => {
+onload = (e) => {
   chrome.runtime.sendMessage({ message: PAGE_LOADED });
 };
-window.onunload = (e) => {
+onunload = (e) => {
   chrome.runtime.sendMessage({ message: PAGE_UNLOADED });
 };

@@ -21,10 +21,6 @@ Using the extension
 Once the extension is installed, a popup will appear to grant access to the camera. After which you can use the extension however you like. Enable Debug logging in the console if you would like to view the debug logs.
 
 
-TODO
-----
-- Configurable model URL from popup/setup page
-
 Removing the extension
 ----
 To remove the extension, click `Remove` on the extension page, or use the `Remove from Chrome...` menu option when right clicking the icon.

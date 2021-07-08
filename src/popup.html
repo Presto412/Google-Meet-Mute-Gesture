@@ -6,39 +6,116 @@
     <title></title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="popup.js"></script>
+    <link rel="stylesheet" href="../static/bulma.css" />
+    <link rel="stylesheet" href="../static/bulma-slider.min.css" />
+    <link rel="stylesheet" href="../static/popup.css" />
+    <script src="popup.ts"></script>
   </head>
   <body>
-    <h1>Google Meet Gesture Mute</h1>
-    <h2>Feature Toggles</h2>
-    <input
-      type="checkbox"
-      id="muteMic"
-      name="muteMic"
-      value="muteMic"
-      checked
-    />
-    <label for="muteMic"> Mic Muting</label><br />
-    <input
-      type="checkbox"
-      id="muteVideo"
-      name="muteVideo"
-      value="muteVideo"
-      checked
-    />
-    <label for="muteVideo">Video Muting</label><br />
-    <input
-      type="checkbox"
-      id="raiseHand"
-      name="raiseHand"
-      value="raiseHand"
-      checked
-    />
-    <label for="raiseHand">Raise Hand Gesture</label><br />
-    <h2>Accuracy threshold</h2>
-    <input type="range" min="0.950" max="1.000" step="0.001" id="threshold" />
-    <div id="result"></div>
-    <hr />
-    <p>Made by <a href="https://www.github.com/Presto412">Priyansh Jain</a></p>
+    <section class="hero is-info">
+      <div class="hero-body">
+        <p class="title">Google Meet Gesture Mute</p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <div class="box content">
+          <h2 class="subtitle">Feature Toggles</h2>
+          <input
+            type="checkbox"
+            id="muteMic"
+            name="muteMic"
+            value="muteMic"
+            checked
+            class="checkbox"
+          />
+          <label for="muteMic"> Mic Muting</label><br />
+          <input
+            type="checkbox"
+            id="muteVideo"
+            name="muteVideo"
+            value="muteVideo"
+            checked
+            class="checkbox"
+          />
+          <label for="muteVideo">Video Muting</label><br />
+          <input
+            type="checkbox"
+            id="raiseHand"
+            name="raiseHand"
+            value="raiseHand"
+            checked
+            class="checkbox"
+          />
+          <label for="raiseHand">Raise Hand Gesture</label><br />
+        </div>
+        <div class="box content">
+          <h2 class="subtitle">Accuracy threshold</h2>
+          <input
+            class="slider is-fullwidth is-info"
+            type="range"
+            min="0.950"
+            max="1.000"
+            step="0.001"
+            value="0.980"
+            id="threshold"
+          />
+          <div id="result">0.98</div>
+        </div>
+        <div class="box">
+          <div class="content field">
+            <h2 class="subtitle">Using your own model?</h2>
+            <p>Steps to follow:</p>
+            <ul>
+              <li>
+                Go to the 
+                <a href="https://teachablemachine.withgoogle.com/train/image"
+                  >teachable machine</a
+                > website.
+              </li>
+              <li>
+                Name the classes as mentioned below, and use the webcam option
+                to capture photos(200 for each label should suffice).
+              </li>
+              <li>
+                Once photos are captured for all three classes, click on train,
+                and once training is complete, click on upload.
+              </li>
+              <li>
+                A URL will be generated, which should be pasted on the text
+                field below.
+              </li>
+            </ul>
+            <p>Make sure the classes are labeled as the following:</p>
+            <ul>
+              <li>Mute Mic</li>
+              <li>Mute Video</li>
+              <li>Raise Hand</li>
+            </ul>
+          </div>
+          <br />
+          <div class="field">
+            <label class="label" for="url">Teachable Machine Model URL</label>
+            <input
+              type="url"
+              name="url"
+              id="url"
+              placeholder="https://teachablemachine.withgoogle.com/models/GM45nRQbm/"
+              pattern="https://teachablemachine.withgoogle.com/models/.*"
+              class="input"
+            />
+          </div>
+          <button id="urlButton" class="button is-info is-rounded is-fullwidth">Submit</button>
+        </div>
+      </div>
+    </section>
+    <footer class="footer">
+      <div class="content has-text-centered">
+        <p>
+          Made by
+          <a href="https://www.github.com/Presto412">Priyansh Jain</a>
+        </p>
+      </div>
+    </footer>
   </body>
 </html>

@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "Exo2";
+  src: url("./Exo2-VariableFont_wght.ttf");
+}
+
+body {
+  width: 400px;
+  height: 200px;
+  font-family: "Exo2" !important;
+}
