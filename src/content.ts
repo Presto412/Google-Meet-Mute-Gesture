@@ -1,3 +1,4 @@
+import { Communicator } from "./communicator";
 import {
   MUTE_MIC,
   MUTE_VIDEO,
@@ -8,7 +9,6 @@ import {
   RAISE_HAND,
   NOTIFICATION,
   FEATURE_TOGGLES,
-  ENABLED,
 } from "./constants";
 
 let threshold = 0.98;
@@ -66,6 +66,9 @@ function findElementByAriaLabelAndClick(searchString: string, msg: string) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || message.receiver !== "contentScript") {
+    return;
+  }
   switch (message.action) {
     case PREDICTION:
       handlePrediction(message.prediction);
@@ -74,38 +77,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       threshold = message.value;
       break;
     case FEATURE_TOGGLES:
-      if (message[MUTE_MIC]) {
-        if (message[MUTE_MIC] === ENABLED) {
-          muteMicEnabled = true;
-        } else {
-          muteMicEnabled = false;
-        }
-      }
-      if (message[MUTE_VIDEO]) {
-        if (message[MUTE_VIDEO] === ENABLED) {
-          muteVideoEnabled = true;
-        } else {
-          muteVideoEnabled = false;
-        }
-      }
-      if (message[RAISE_HAND]) {
-        if (message[RAISE_HAND] === ENABLED) {
-          raiseHandEnabled = true;
-        } else {
-          raiseHandEnabled = false;
-        }
-      }
-      if (message[THRESHOLD]) {
-        threshold = message[THRESHOLD];
-      }
+      muteMicEnabled = message[MUTE_MIC] ?? muteMicEnabled;
+      muteVideoEnabled = message[MUTE_VIDEO] ?? muteVideoEnabled;
+      raiseHandEnabled = message[RAISE_HAND] ?? raiseHandEnabled;
+      threshold = message[THRESHOLD] ?? threshold;
     default:
       break;
   }
 });
 
 onload = (e) => {
-  chrome.runtime.sendMessage({ message: PAGE_LOADED });
+  Communicator.sendMessageToBackground({ type: PAGE_LOADED });
 };
 onunload = (e) => {
-  chrome.runtime.sendMessage({ message: PAGE_UNLOADED });
+  Communicator.sendMessageToBackground({ type: PAGE_UNLOADED });
 };

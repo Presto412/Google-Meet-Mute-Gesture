@@ -1,15 +1,10 @@
 import "babel-polyfill";
-import { CustomMobileNet, load } from "@teachablemachine/image";
 import {
   DEFAULT_TMMODEL_URL,
   CAM_ACCESS,
-  CANVAS_WIDTH,
   PAGE_LOADED,
   WELCOME_PAGE,
-  CANVAS_HEIGHT,
   PREDICTION,
-  MODEL_EXT,
-  METADATA_EXT,
   THRESHOLD,
   MEET_URL,
   NOTIFICATION,
@@ -19,59 +14,13 @@ import {
   MUTE_VIDEO,
   MUTE_MIC,
   MODEL_URL,
+  PAGE_UNLOADED,
 } from "./constants";
+import { Communicator } from "./communicator";
+import { Predictor } from "./predictor";
 
-let model: CustomMobileNet, videoStream: MediaStream;
-let video = document.createElement("video");
-let canvas = document.createElement("canvas");
+let videoStream: MediaStream, imageCapture: ImageCapture;
 let doLoop = false;
-
-chrome.runtime.onConnect.addListener(function (port) {
-  sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
-  port.onMessage.addListener(async function (msg) {
-    switch (msg.type) {
-      case POPUP_LOADED:
-        sendLocalStorageInfoForKeyToPopup(port, THRESHOLD);
-        sendLocalStorageInfoForKeyToPopup(port, MUTE_MIC);
-        sendLocalStorageInfoForKeyToPopup(port, MUTE_VIDEO);
-        sendLocalStorageInfoForKeyToPopup(port, RAISE_HAND);
-        break;
-      case FEATURE_TOGGLES:
-        let copy = msg;
-        delete copy.type;
-        sendMessageToActiveMeetTab({
-          action: FEATURE_TOGGLES,
-          ...copy,
-        });
-        chrome.storage.local.set({ ...copy });
-        break;
-      case MODEL_URL:
-        const {url} = msg;
-        await loadModel(url);
-        chrome.storage.local.set({[MODEL_URL]: url});
-      default:
-        break;
-    }
-  });
-});
-
-chrome.storage.local.get([CAM_ACCESS, MODEL_URL], async (items) => {
-  if (items[CAM_ACCESS]) {
-    console.debug("cam access already exists");
-    if(items[MODEL_URL]) {
-      await loadModel(items[MODEL_URL]);
-    } else {
-      await loadModel(DEFAULT_TMMODEL_URL);
-    }
-  }
-});
-
-chrome.storage.onChanged.addListener(async (changes, _namespace) => {
-  if (CAM_ACCESS in changes) {
-    console.debug("cam access granted");
-    await loadModel(DEFAULT_TMMODEL_URL);
-  }
-});
 
 // Do first-time setup to gain access to webcam, if necessary.
 chrome.runtime.onInstalled.addListener((details) => {
@@ -84,40 +33,110 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message && message.message === PAGE_LOADED) {
-    doLoop = true;
-    setupCam();
-    sendLocalStorageInfoForKeyToContentScript(THRESHOLD);
-    sendLocalStorageInfoForKeyToContentScript(MUTE_MIC);
-    sendLocalStorageInfoForKeyToContentScript(MUTE_VIDEO);
-    sendLocalStorageInfoForKeyToContentScript(RAISE_HAND);
-  } else if (message && message.type && message.type === NOTIFICATION) {
-    showNotification(message);
-  } else {
-    doLoop = false;
-    destroyCam();
+sendLocalStorageInfoForKeyToPopup(THRESHOLD);
+chrome.storage.local.get([CAM_ACCESS, MODEL_URL], async (items) => {
+  if (items[CAM_ACCESS]) {
+    console.debug("cam access already exists");
+    if (items[MODEL_URL]) {
+      await Predictor.loadModel(items[MODEL_URL]);
+    } else {
+      await Predictor.loadModel(DEFAULT_TMMODEL_URL);
+    }
   }
 });
 
-function sendLocalStorageInfoForKeyToPopup(
-  port: chrome.runtime.Port,
-  key: string | any
-) {
+function sendLocalStorageInfoForKeyToPopup(key: string | any) {
   chrome.storage.local.get(key, (result) => {
     if (result) {
-      port.postMessage({ [key]: result[key] });
+      Communicator.sendMessageToPopup({ [key]: result[key] });
     }
   });
+}
+
+chrome.storage.onChanged.addListener(async (changes, _namespace) => {
+  if (CAM_ACCESS in changes) {
+    console.debug("cam access granted");
+    await Predictor.loadModel(DEFAULT_TMMODEL_URL);
+  }
+});
+
+chrome.runtime.onMessage.addListener(async (message, _sender) => {
+  if (message.receiver !== "background" || !message) {
+    return;
+  }
+  switch (message.type) {
+    case PAGE_LOADED:
+      handlePageLoad();
+      break;
+    case PAGE_UNLOADED:
+      handlePageUnload();
+      break;
+    case NOTIFICATION:
+      showNotification(message);
+      break;
+    case POPUP_LOADED:
+      handlePopupLoaded();
+      break;
+    case FEATURE_TOGGLES:
+      handleFeatureToggle(message);
+      break;
+    case MODEL_URL:
+      await handleModelUrlUpdate(message.url);
+      break;
+    default:
+      break;
+  }
+});
+
+async function handleModelUrlUpdate(url: string) {
+  await Predictor.loadModel(url);
+  chrome.storage.local.set({ [MODEL_URL]: url });
+}
+
+function handleFeatureToggle(message: any) {
+  let copy = message;
+  delete copy.type;
+  Communicator.sendMessageToTab(
+    {
+      action: FEATURE_TOGGLES,
+      ...copy,
+    },
+    MEET_URL
+  );
+  chrome.storage.local.set({ ...copy });
+}
+
+function handlePopupLoaded() {
+  sendLocalStorageInfoForKeyToPopup(THRESHOLD);
+  sendLocalStorageInfoForKeyToPopup(MUTE_MIC);
+  sendLocalStorageInfoForKeyToPopup(MUTE_VIDEO);
+  sendLocalStorageInfoForKeyToPopup(RAISE_HAND);
+}
+
+function handlePageUnload() {
+  doLoop = false;
+  destroyCam();
+}
+
+function handlePageLoad() {
+  doLoop = true;
+  setupCam();
+  sendLocalStorageInfoForKeyToContentScript(THRESHOLD);
+  sendLocalStorageInfoForKeyToContentScript(MUTE_MIC);
+  sendLocalStorageInfoForKeyToContentScript(MUTE_VIDEO);
+  sendLocalStorageInfoForKeyToContentScript(RAISE_HAND);
 }
 
 function sendLocalStorageInfoForKeyToContentScript(key: string | any) {
   chrome.storage.local.get(key, (result) => {
     if (result) {
-      sendMessageToActiveMeetTab({
-        action: FEATURE_TOGGLES,
-        [key]: result[key],
-      });
+      Communicator.sendMessageToTab(
+        {
+          action: FEATURE_TOGGLES,
+          [key]: result[key],
+        },
+        MEET_URL
+      );
     }
   });
 }
@@ -130,39 +149,39 @@ function showNotification(message: { message: any }) {
       title: "Google Meet Gesture Mute",
       message: message.message,
       iconUrl: "/mute.png",
-      eventTime: 500,
+      eventTime: Date.now() + 500,
     },
     () => {}
   );
 }
 
 async function setupCam() {
-  navigator.mediaDevices
-    .getUserMedia({
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
       video: true,
-    })
-    .then((mediaStream) => {
-      video.setAttribute("playsinline", "");
-      video.setAttribute("autoplay", "");
-      video.srcObject = mediaStream;
-      videoStream = mediaStream;
-      canvas.width = CANVAS_WIDTH;
-      canvas.height = CANVAS_HEIGHT;
-      console.debug("src assigned");
-    })
-    .catch((error) => {
-      console.warn(error);
     });
-  if (doLoop) {
-    setTimeout(async () => await loop(), 1000);
+    imageCapture = new ImageCapture(videoStream.getVideoTracks()[0]);
+    if (doLoop) {
+      setTimeout(async () => await loop(), 1000);
+    }
+  } catch (error) {
+    console.error(`Error: ${error}`);
   }
 }
 
 async function loop() {
-  const prediction = await predict(video);
-  sendMessageToActiveMeetTab({ action: PREDICTION, prediction });
-  if (doLoop) {
-    setTimeout(async () => await loop(), 250);
+  if (
+    !(
+      imageCapture.track.readyState != "live" ||
+      !imageCapture.track.enabled ||
+      imageCapture.track.muted
+    )
+  ) {
+    const prediction = await Predictor.predict(await imageCapture.grabFrame());
+    Communicator.sendMessageToTab({ action: PREDICTION, prediction }, MEET_URL);
+    if (doLoop) {
+      setTimeout(async () => await loop(), 250);
+    }
   }
 }
 
@@ -171,41 +190,3 @@ async function destroyCam() {
     track.stop();
   });
 }
-
-async function loadModel(url) {
-  console.debug("Loading model...");
-  const modelURL = url + MODEL_EXT;
-  const metadataURL = url + METADATA_EXT;
-  try {
-    model = await load(modelURL, metadataURL);
-    let maxPredictions = model.getTotalClasses();
-    console.debug(`Max predictions:${maxPredictions}`);
-  } catch (err) {
-    console.error(
-      `Unable to load model from URL: ${url}. Error: ${JSON.stringify(
-        err
-      )}`
-    );
-  }
-}
-
-async function predict(video: CanvasImageSource) {
-  console.debug("Predicting...");
-  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-  const prediction = await model.predict(canvas);
-  return prediction;
-}
-
-const sendMessageToActiveMeetTab = (message: {
-  [x: number]: any;
-  action: string;
-  prediction?: any;
-}) => {
-  chrome.tabs.query({}, function (tabs) {
-    if (!tabs) {
-      return;
-    }
-    let meetTabs = tabs.filter((tab) => tab.url.includes(MEET_URL));
-    meetTabs[0] && chrome.tabs.sendMessage(meetTabs[0].id, message);
-  });
-};
