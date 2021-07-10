@@ -1,5 +1,5 @@
 export const DEFAULT_TMMODEL_URL =
-  "https://teachablemachine.withgoogle.com/models/GM45nRQbm/";
+  "https://teachablemachine.withgoogle.com/models/nQIuGo7r2/";
 export const WELCOME_PAGE = "welcome.html";
 export const PREDICTION = "PREDICTION";
 export const CAM_ACCESS = "camAccess";
