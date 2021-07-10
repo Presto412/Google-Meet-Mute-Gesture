@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Use gesture recognition to mute audio/video on google meet",
   "scripts": {
-    "build": "mkdir -p dist && parcel build src/* -d dist -o background",
+    "build": "mkdir -p dist && parcel build --no-minify src/background.ts src/popup.ts src/welcome.ts src/content.ts -d dist -o background",
     "watch": "mkdir -p dist && parcel watch src/* --hmr-hostname localhost -d dist -o background"
   },
   "license": "MIT",
