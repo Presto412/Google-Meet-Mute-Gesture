@@ -61,7 +61,7 @@ function findElementByAriaLabelAndClick(searchString: string, msg: string) {
 
   if (elem) {
     elem.click();
-    msg && chrome.runtime.sendMessage({ type: NOTIFICATION, message: msg });
+    msg && Communicator.sendMessageToBackground({ type: NOTIFICATION, message: msg });
   }
 }
 

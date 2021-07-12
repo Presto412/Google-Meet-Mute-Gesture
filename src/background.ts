@@ -15,12 +15,21 @@ import {
   MUTE_MIC,
   MODEL_URL,
   PAGE_UNLOADED,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  MODEL_IMAGE_WIDTH,
+  MODEL_IMAGE_HEIGHT,
+  RESET_DEFAULTS,
+  REFRESH_DOM,
 } from "./constants";
 import { Communicator } from "./communicator";
 import { Predictor } from "./predictor";
+import { Cropper } from "./cropper";
 
-let videoStream: MediaStream, imageCapture: ImageCapture;
+let videoStream: MediaStream;
 let doLoop = false;
+let video: HTMLVideoElement = document.createElement("video");
+let canvas: HTMLCanvasElement = document.createElement("canvas");
 
 // Do first-time setup to gain access to webcam, if necessary.
 chrome.runtime.onInstalled.addListener((details) => {
@@ -48,6 +57,7 @@ chrome.storage.local.get([CAM_ACCESS, MODEL_URL], async (items) => {
 function sendLocalStorageInfoForKeyToPopup(key: string | any) {
   chrome.storage.local.get(key, (result) => {
     if (result) {
+      console.log(`sending msg:${JSON.stringify(result)}`);
       Communicator.sendMessageToPopup({ [key]: result[key] });
     }
   });
@@ -82,15 +92,40 @@ chrome.runtime.onMessage.addListener(async (message, _sender) => {
       break;
     case MODEL_URL:
       await handleModelUrlUpdate(message.url);
+      Communicator.sendMessageToPopup({ [REFRESH_DOM]: true });
       break;
+    case RESET_DEFAULTS:
+      await handleModelUrlUpdate(DEFAULT_TMMODEL_URL);
+      console.log("resetting toggles");
+      handleFeatureToggle({ [MUTE_MIC]: true });
+      handleFeatureToggle({ [MUTE_VIDEO]: true });
+      handleFeatureToggle({ [RAISE_HAND]: true });
+      handleFeatureToggle({ [THRESHOLD]: 0.98 });
+      showNotification({ message: "Reset Defaults Succesfully" });
+      Communicator.sendMessageToPopup({ [REFRESH_DOM]: true });
     default:
       break;
   }
 });
 
 async function handleModelUrlUpdate(url: string) {
-  await Predictor.loadModel(url);
-  chrome.storage.local.set({ [MODEL_URL]: url });
+  try {
+    chrome.storage.local.set({ [MODEL_URL]: url });
+    await Predictor.loadModel(url);
+    showNotification({
+      message: `Loaded Model successfully.`,
+    });
+  } catch (error) {
+    chrome.storage.local.get([MODEL_URL], async (items) => {
+      if (DEFAULT_TMMODEL_URL !== items[MODEL_URL]) {
+        console.debug("Reloading default model.");
+        await handleModelUrlUpdate(DEFAULT_TMMODEL_URL);
+      }
+    });
+    showNotification({
+      message: `Model Load Failed. Attempting to revert to default`,
+    });
+  }
 }
 
 function handleFeatureToggle(message: any) {
@@ -111,6 +146,7 @@ function handlePopupLoaded() {
   sendLocalStorageInfoForKeyToPopup(MUTE_MIC);
   sendLocalStorageInfoForKeyToPopup(MUTE_VIDEO);
   sendLocalStorageInfoForKeyToPopup(RAISE_HAND);
+  sendLocalStorageInfoForKeyToPopup(MODEL_URL);
 }
 
 function handlePageUnload() {
@@ -160,7 +196,11 @@ async function setupCam() {
     videoStream = await navigator.mediaDevices.getUserMedia({
       video: true,
     });
-    imageCapture = new ImageCapture(videoStream.getVideoTracks()[0]);
+    video.playsInline = true;
+    video.autoplay = true;
+    video.srcObject = videoStream;
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
     if (doLoop) {
       setTimeout(async () => await loop(), 1000);
     }
@@ -170,18 +210,17 @@ async function setupCam() {
 }
 
 async function loop() {
-  if (
-    !(
-      imageCapture.track.readyState != "live" ||
-      !imageCapture.track.enabled ||
-      imageCapture.track.muted
-    )
-  ) {
-    const prediction = await Predictor.predict(await imageCapture.grabFrame());
-    Communicator.sendMessageToTab({ action: PREDICTION, prediction }, MEET_URL);
-    if (doLoop) {
-      setTimeout(async () => await loop(), 250);
-    }
+  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+  let squareImageBitmap = await Cropper.crop(canvas, 1 / 1);
+  let scaledImageBitmap = await Cropper.resize(
+    squareImageBitmap,
+    MODEL_IMAGE_WIDTH,
+    MODEL_IMAGE_HEIGHT
+  );
+  const prediction = await Predictor.predict(scaledImageBitmap);
+  Communicator.sendMessageToTab({ action: PREDICTION, prediction }, MEET_URL);
+  if (doLoop) {
+    setTimeout(async () => await loop(), 500);
   }
 }
 

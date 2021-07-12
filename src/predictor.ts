@@ -20,6 +20,7 @@ export class Predictor {
       console.error(
         `Unable to load model from URL: ${url}. Error: ${JSON.stringify(err)}`
       );
+      throw err;
     }
   }
 

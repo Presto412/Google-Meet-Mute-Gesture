@@ -65,13 +65,15 @@
         <div class="box">
           <div class="content field">
             <h2 class="subtitle">Using your own model?</h2>
+            <a id="modelUrlDisplay" href="#" target="_blank">Current Model</a>
             <p>Steps to follow:</p>
             <ul>
               <li>
-                Go to the 
+                Go to the
                 <a href="https://teachablemachine.withgoogle.com/train/image"
                   >teachable machine</a
-                > website.
+                >
+                website.
               </li>
               <li>
                 Name the classes as mentioned below, and use the webcam option
@@ -94,18 +96,30 @@
             </ul>
           </div>
           <br />
-          <div class="field">
-            <label class="label" for="url">Teachable Machine Model URL</label>
-            <input
-              type="url"
-              name="url"
-              id="url"
-              placeholder="https://teachablemachine.withgoogle.com/models/GM45nRQbm/"
-              pattern="https://teachablemachine.withgoogle.com/models/.*/"
-              class="input"
-            />
-          </div>
-          <button id="urlButton" class="button is-info is-rounded is-fullwidth">Submit</button>
+          <form id="urlForm">
+            <div class="field">
+              <label class="label" for="url">Teachable Machine Model URL</label>
+              <input
+                type="url"
+                name="url"
+                id="url"
+                placeholder="https://teachablemachine.withgoogle.com/models/GM45nRQbm/"
+                pattern="https://teachablemachine.withgoogle.com/models/.*/"
+                class="input"
+                required
+              />
+            </div>
+            <input id="urlButton" type="submit" class="button is-info is-rounded is-fullwidth">
+            </button>
+          </form>
+        </div>
+        <div class="box">
+          <button
+            id="defaultButton"
+            class="button is-danger is-rounded is-fullwidth"
+          >
+            Reset Defaults
+          </button>
         </div>
       </div>
     </section>
