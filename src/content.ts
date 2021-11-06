@@ -77,6 +77,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       threshold = message.value;
       break;
     case FEATURE_TOGGLES:
+      console.log(JSON.stringify(message));
       muteMicEnabled = message[MUTE_MIC] ?? muteMicEnabled;
       muteVideoEnabled = message[MUTE_VIDEO] ?? muteVideoEnabled;
       raiseHandEnabled = message[RAISE_HAND] ?? raiseHandEnabled;

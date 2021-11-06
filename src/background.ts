@@ -56,7 +56,7 @@ chrome.storage.local.get([CAM_ACCESS, MODEL_URL], async (items) => {
 
 function sendLocalStorageInfoForKeyToPopup(key: string | any) {
   chrome.storage.local.get(key, (result) => {
-    if (result) {
+    if (result && Object.keys(result).length != 0) {
       console.log(`sending msg:${JSON.stringify(result)}`);
       Communicator.sendMessageToPopup({ [key]: result[key] });
     }
@@ -129,8 +129,10 @@ async function handleModelUrlUpdate(url: string) {
 }
 
 function handleFeatureToggle(message: any) {
+  console.log(`message: ${JSON.stringify(message)}`)
   let copy = message;
   delete copy.type;
+  console.log(`copy: ${JSON.stringify(message)}`)
   Communicator.sendMessageToTab(
     {
       action: FEATURE_TOGGLES,

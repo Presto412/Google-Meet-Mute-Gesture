@@ -1,8 +1,8 @@
 {
   "name": "Google Meet Gesture Mute",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Mutes the audio/video based on hand gestures on Google Meet",
-  "permissions": ["activeTab", "storage", "tabs", "notifications"],
+  "permissions": ["storage", "tabs", "notifications"],
   "background": {
     "scripts": ["background.js"],
     "persistent": true

@@ -27,7 +27,7 @@ export class Predictor {
   static async predict(source: ClassifierInputSource) {
     if (!Predictor.model) {
       console.error("Model not loaded");
-      return;
+      throw new Error("Model not loaded");
     }
     return await Predictor.model.predict(source);
   }
